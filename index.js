@@ -46,7 +46,7 @@ class sub2vtt {
             let res = await this.request(
                 {
                     method: "head",
-                    url,
+                    url:this.url,
                 })
             if (!res || !res.status == "200" || !res.headers) throw "error getting headers"
             let headers = res.headers;
@@ -202,10 +202,17 @@ class sub2vtt {
     getClient () {
         let config = {
             timeout: 5000,
-            //headers: { 'X-Custom-Header': 'foobar' }
         }
         if(this.proxy) config.headers = this.proxy;
         this.client = axios.create(config);
+    }
+    static gerenateUrl(url=String, proxy){
+        let proxyString,data;
+        data= new URLSearchParams();
+        data.append("from",url)
+        if(proxy) proxyString = Buffer.from(JSON.stringify(proxy)).toString('base64');
+        if(proxy) data.append("proxy",proxyString)
+        return data.toString();
     }
 };
 

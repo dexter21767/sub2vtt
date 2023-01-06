@@ -6,13 +6,13 @@
   "directories": {
     "lib": "lib"
   },
-  "scripts": {
-  },
+  "scripts": {},
   "author": "dexter21767",
   "license": "ISC",
   "dependencies": {
     "adm-zip": "^0.5.10",
     "axios": "^1.2.2",
+    "iconv-jschardet": "^2.0.32",
     "node-unrar-js": "^2.0.0",
     "subtitle-converter": "^3.0.12"
   }
