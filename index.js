@@ -99,17 +99,21 @@ class sub2vtt {
     async GetSub(data) {
         try {
             let res;
+
             if (data) {
                 res = data
             } else {
-                let res = await this.request({
+                res = await this.request({
                     method: 'get',
                     url: this.url,
                     responseType: 'arraybuffer'
                 });
+                if(res?.data) res = res.data
                 if (!res) throw "error requesting file"
             }
+            //console.log("data",res.toString())
             var data = iconv.encode(res, 'utf8').toString();
+            console.log("data",data.length)
             const outputExtension = '.vtt'; // conversion is based on output file extension
             const options = {
                 removeTextFormatting: true,
@@ -117,13 +121,14 @@ class sub2vtt {
                 timecodeOverlapLimiter: false,
             };
             const { subtitle, status } = convert(data, outputExtension, options)
-
+            console.log(status)
             if (subtitle) return { res: "success", subtitle: subtitle, status: status, res: data }
             //if (status.success) return { res: "success", subtitle: subtitle, status: status, res: res }
             else return { res: "error", subtitle: null }
         } catch (err) {
             console.error(err);
             this.error = err;
+            return { res: "error", subtitle: data }
         }
     }
 
