@@ -206,7 +206,7 @@ class sub2vtt {
     }
     getClient () {
         let config = {
-            timeout: 5000,
+            timeout: 15000,
             headers : {}
         }
         if(this.proxy) config.headers = this.proxy;
