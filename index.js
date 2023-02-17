@@ -8,7 +8,7 @@ iconv.skipDecodeWarning(true)
 iconv.disableCodecDataWarn(true)
 
 class sub2vtt {
-    constructor(url = String, proxy = Object) {
+    constructor(url , proxy) {
         this.url = url;
         this.proxy = proxy || {};
         this.error = null;
@@ -207,8 +207,11 @@ class sub2vtt {
     getClient () {
         let config = {
             timeout: 5000,
+            headers : {}
         }
         if(this.proxy) config.headers = this.proxy;
+        config.headers["Accept-Encoding"] = "gzip,deflate,compress";
+         
         this.client = axios.create(config);
     }
     static gerenateUrl(url=String, proxy){

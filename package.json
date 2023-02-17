@@ -1,6 +1,6 @@
 {
   "name": "sub2vtt",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "extract subtitles from archives and/or convert them to vtt",
   "main": "index.js",
   "directories": {
@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "adm-zip": "^0.5.10",
-    "axios": "^1.2.2",
+    "axios": "^1.3.3",
     "iconv-jschardet": "^2.0.32",
     "node-unrar-js": "^2.0.0",
     "subtitle-converter": "^3.0.12"
