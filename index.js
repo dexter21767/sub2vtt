@@ -7,6 +7,10 @@ const iconv = require('iconv-jschardet');
 iconv.skipDecodeWarning(true)
 iconv.disableCodecDataWarn(true)
 
+
+const iso639 = require('./ISO639');
+
+
 class sub2vtt {
     constructor(url , proxy) {
         this.url = url;
@@ -221,6 +225,9 @@ class sub2vtt {
         if(proxy) proxyString = Buffer.from(JSON.stringify(proxy)).toString('base64');
         if(proxy) data.append("proxy",proxyString)
         return data.toString();
+    }
+    static ISO(){
+        return iso639;
     }
 };
 
