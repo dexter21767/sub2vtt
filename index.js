@@ -26,7 +26,8 @@ class sub2vtt {
             let file
             let check = await this.CheckUrl()
             //if (check.res == "error") throw 'error checking file'
-            this.type = check.headers["content-type"];
+
+           
             //get the file
             if (check.res == "success" && this.supported.arc.includes(this.type)) {
                 file = await this.extract()
@@ -56,6 +57,8 @@ class sub2vtt {
             let headers = res.headers;
             if (!headers) throw "the url provided couldn't be reached";
             let size = Number(headers["content-length"]);
+            let type = headers["content-type"].split(';')[0];
+            this.type = type;
             //if (!size) throw "error reading the size of the file"
             //if (size > 5000000) throw "the files is too big" // if the file is bigger than 5 mb
 
@@ -63,16 +66,16 @@ class sub2vtt {
                 console.log("the file is buffering")
             }
 
-            if (headers["content-type"] == 'arraybuffer/json') console.log("the file is an array buffer")
-            if (this.supported.arc.includes(headers["content-type"])) {
+            if (type == 'arraybuffer/json') console.log("the file is an array buffer")
+            if (this.supported.arc.includes(type)) {
                 console.log("the requested file is an archive")
-            } else if (this.supported.subs.includes(headers["content-type"])) {
+            } else if (this.supported.subs.includes(type)) {
                 console.log("the requested file is a subtitle")
             } else console.log("unsupported file format")
             return { res: "success", size: size, headers: headers };
         } catch (err) {
             console.error(err);
-            return { res: "error" };
+            return { res: "error",reason:err };
         }
     }
 
@@ -115,7 +118,6 @@ class sub2vtt {
                 if(res?.data) res = res.data
                 if (!res) throw "error requesting file"
             }
-            //console.log("data",res.toString())
             var data = iconv.encode(res, 'utf8').toString();
             console.log("data",data.length)
             const outputExtension = '.vtt'; // conversion is based on output file extension
@@ -138,11 +140,11 @@ class sub2vtt {
 
 
     supported = {
-        arc: ["application/zip", "application/x-rar", "application/x-rar-compressed", "application/vnd.rar"],
+        arc: ["application/zip","application/x-zip-compressed", "application/x-rar", "application/x-rar-compressed", "application/vnd.rar"],
         subs: ["application/x-subrip", "text/vtt", "application/octet-stream"],
         arcs: {
             rar: ["application/x-rar", "application/x-rar-compressed", "application/vnd.rar"],
-            zip: ["application/zip"]
+            zip: ["application/zip","application/x-zip-compressed"]
 
         }
     }
