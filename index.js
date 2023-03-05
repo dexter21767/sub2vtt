@@ -15,25 +15,54 @@ class sub2vtt {
     constructor(url , proxy) {
         this.url = url;
         this.proxy = proxy || {};
+        this.data = null;
+        this.size = null;
         this.error = null;
         this.type = null;
         this.client = null;
     }
 
+    async GetData() {
+        let res = await this.request({
+            method: 'get',
+            url: this.url,
+            responseType: 'arraybuffer'
+        });
+        if(res?.data){
+        this.type = res.headers["content-type"].split(';')[0];
+        this.data = res.data;
+        this.size = Number(headers["content-length"]);
+        }
+    }
+
+    GiveData(data){
+        this.data = data;
+    }
+    DatafromHeaders(headers){
+        this.type = headers["content-type"].split(';')[0];
+        this.size = Number(headers["content-length"]);
+    }
+
     async getSubtitle() {
         try {
             // checking the link
-            let file
-            let check = await this.CheckUrl()
-            //if (check.res == "error") throw 'error checking file'
 
-           
+            let file
+            console.log("this.type",this.type)
+            console.log("this.data",this.data)
+
+            if(!this.type) await this.CheckUrl()
+            
+            if(!this.type || !this.data ) await this.GetData();
+            if(!this.type || !this.data) throw "error getting sub"
+            
+            if(this.size?.length>10000000) throw "file too big"
             //get the file
-            if (check.res == "success" && this.supported.arc.includes(this.type)) {
+            if (this.supported.arc.includes(this.type)) {
                 file = await this.extract()
                 if (!file) throw "error extracting archive"
             }
-            if (check.res == "success" && this.supported.subs.includes(this.type)) {
+            if (this.supported.subs.includes(this.type)) {
                 file = await this.GetSub()
             } else {
                 if (file) file = await this.GetSub(file)
@@ -53,26 +82,24 @@ class sub2vtt {
                     method: "head",
                     url:this.url,
                 })
+
             if (!res || !res.status == "200" || !res.headers) throw "error getting headers"
             let headers = res.headers;
             if (!headers) throw "the url provided couldn't be reached";
-            let size = Number(headers["content-length"]);
-            let type = headers["content-type"].split(';')[0];
-            this.type = type;
-            //if (!size) throw "error reading the size of the file"
-            //if (size > 5000000) throw "the files is too big" // if the file is bigger than 5 mb
+
+            this.DatafromHeaders(headers);
 
             if (headers["transfer-encoding"] && headers["transfer-encoding"] == 'chunked') {
                 console.log("the file is buffering")
             }
 
-            if (type == 'arraybuffer/json') console.log("the file is an array buffer")
-            if (this.supported.arc.includes(type)) {
+            if (this.type == 'arraybuffer/json') console.log("the file is an array buffer")
+            if (this.supported.arc.includes(this.type)) {
                 console.log("the requested file is an archive")
-            } else if (this.supported.subs.includes(type)) {
+            } else if (this.supported.subs.includes(this.type)) {
                 console.log("the requested file is a subtitle")
             } else console.log("unsupported file format")
-            return { res: "success", size: size, headers: headers };
+
         } catch (err) {
             console.error(err);
             return { res: "error",reason:err };
@@ -81,13 +108,9 @@ class sub2vtt {
 
     async extract() {
         try {
-            let res = await this.request({
-                method: 'get',
-                url: this.url,
-                responseType: 'arraybuffer'
-            });
-            if (!res?.data) throw "error requesting file"
-            res = res.data;
+            
+            if (!this.data) throw "error requesting file"
+            res = this.data;
             const rar = this.supported.arcs.rar
             const zip = this.supported.arcs.zip
             if (rar.includes(this.type)) {
@@ -103,13 +126,17 @@ class sub2vtt {
 
     }
 
+
+
     async GetSub(data) {
         try {
             let res;
 
             if (data) {
                 res = data
-            } else {
+            } 
+            else if(this.data) res = this.data
+            else {
                 res = await this.request({
                     method: 'get',
                     url: this.url,
