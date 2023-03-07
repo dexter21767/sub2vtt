@@ -31,7 +31,7 @@ class sub2vtt {
         if(res?.data){
         this.type = res.headers["content-type"].split(';')[0];
         this.data = res.data;
-        this.size = Number(headers["content-length"]);
+        this.size = Number(res.headers["content-length"]);
         }
     }
 

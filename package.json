@@ -1,6 +1,6 @@
 {
   "name": "sub2vtt",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "extract subtitles from archives and/or convert them to vtt",
   "main": "index.js",
   "directories": {
@@ -16,7 +16,6 @@
     "node-unrar-js": "^2.0.0",
     "subtitle-converter": "^3.0.12"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dexter21767/sub2vtt.git"
