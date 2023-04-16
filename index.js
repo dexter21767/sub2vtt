@@ -110,7 +110,7 @@ class sub2vtt {
         try {
             
             if (!this.data) throw "error requesting file"
-            res = this.data;
+            let res = this.data;
             const rar = this.supported.arcs.rar
             const zip = this.supported.arcs.zip
             if (rar.includes(this.type)) {
