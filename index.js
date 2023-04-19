@@ -201,10 +201,10 @@ class sub2vtt {
                 if (this.episode) {
                     if (!this.checkEpisode(filename)) continue;
                 }
+                console.log("matched file : " , filename);
                 files.push(zipEntries[i].getData())
                 break; // because only takes the first match
             }
-            console.log("filtered file count :", files.length)
             if (files?.length) return files[0]
             else return
         } catch (err) {
@@ -225,6 +225,7 @@ class sub2vtt {
                 if (this.episode) {
                     if (!this.checkEpisode(filename)) continue;
                 }
+                console.log("matched file : " , filename);
                 filesNames.push(filename)
                 break; // because only takes the first match
             }
