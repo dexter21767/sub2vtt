@@ -12,7 +12,7 @@ const iso639 = require('./ISO639');
 
 
 class sub2vtt {
-    constructor(url , proxy) {
+    constructor(url , proxy, episode) {
         this.url = url;
         this.proxy = proxy || {};
         this.data = null;
@@ -20,6 +20,7 @@ class sub2vtt {
         this.error = null;
         this.type = null;
         this.client = null;
+        this.episode = episode || null;
     }
 
     async GetData() {
@@ -146,7 +147,12 @@ class sub2vtt {
                 if (!res) throw "error requesting file"
             }
             var data = iconv.encode(res, 'utf8').toString();
-            console.log("data",data.length)
+            // some subtitles have whitespaces in the end/ beginning of line
+            let fixdata = data
+            fixdata = fixdata.split(/\r?\n/)
+            fixdata = fixdata.map(row => row.trim())
+            data = fixdata.join('\n');
+            //-----------------------------------------
             const outputExtension = '.vtt'; // conversion is based on output file extension
             const options = {
                 removeTextFormatting: true,
@@ -156,7 +162,7 @@ class sub2vtt {
             const { subtitle, status } = convert(data, outputExtension, options)
             console.log(status)
             if (subtitle) return { res: "success", subtitle: subtitle, status: status, res: data }
-            //if (status.success) return { res: "success", subtitle: subtitle, status: status, res: res }
+            if (status.success) return { res: "success", subtitle: subtitle, status: status, res: res }
             else return { res: "error", subtitle: null }
         } catch (err) {
             console.error(err);
@@ -176,18 +182,29 @@ class sub2vtt {
         }
     }
 
+    checkExtension(toFilter) { // return index of matched episodes
+        return toFilter.match(/.dfxp|.scc|.srt|.ttml|.ssa|.vtt|.ass|.srt/gi)
+    }
+    checkEpisode(toFilter) {
+        var reEpisode = new RegExp(this.episode,"gi");
+        return toFilter.match(reEpisode)
+    }
     async unzip(file) {
         try {
             var zip = new AdmZip(file);
             var zipEntries = zip.getEntries();
-            console.log(zipEntries.length)
-            const files = []
-            for (var i = 0; i < zipEntries.length; i++) {
-                console.log(zipEntries[i].entryName);
-                if (zipEntries[i].entryName.match(/.dfxp|.scc|.srt|.ttml|.ssa|.vtt|.ass|.srt/gi))
-                    files.push(zipEntries[i].getData())
+            console.log("zip file count: ",zipEntries.length)
+            let files = []
+            for (var i = 0; i < zipEntries.length; i++) { 
+                var filename = zipEntries[i].entryName;
+                if (!this.checkExtension(filename)) continue;
+                if (this.episode) {
+                    if (!this.checkEpisode(filename)) continue;
+                }
+                files.push(zipEntries[i].getData())
+                break; // because only takes the first match
             }
-            console.log(files.length)
+            console.log("filtered file count :", files.length)
             if (files?.length) return files[0]
             else return
         } catch (err) {
@@ -197,26 +214,25 @@ class sub2vtt {
 
     async unrar(file) {
         try {
-
             const extractor = await unrar.createExtractorFromData({ data: file });
-
             const list = extractor.getFileList();
             const listArcHeader = list.arcHeader; // archive header
             const fileHeaders = [...list.fileHeaders]; // load the file headers
-
-            const filesNames = []
+            let filesNames = []
             for (var i = 0; i < fileHeaders.length; i++) {
-                if (fileHeaders[i].name.match(/.dfxp|.scc|.srt|.ttml|.ssa|.vtt|.ass|.srt/gi)) {
-                    filesNames.push(fileHeaders[i].name)
+                var filename = fileHeaders[i].name;
+                if (!this.checkExtension(filename)) continue;
+                if (this.episode) {
+                    if (!this.checkEpisode(filename)) continue;
                 }
+                filesNames.push(filename)
+                break; // because only takes the first match
             }
-
             const extracted = extractor.extract({ files: filesNames });
             // extracted.arcHeader  : archive header
             const files = [...extracted.files]; //load the files
             files[0].fileHeader; // file header
             files[0].extraction; // Uint8Array content, createExtractorFromData only
-
             return files[0].extraction
         } catch (err) {
             console.error(err);
