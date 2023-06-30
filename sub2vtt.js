@@ -28,10 +28,12 @@ class sub2vtt {
         let res = await this.request({
             method: 'get',
             url: this.url,
-            responseType: 'arraybuffer'
+            responseType: 'arraybuffer',
+            Accept: this.type,
         });
+        //console.log("res",res)
         if (res?.data) {
-            this.type = res.headers["content-type"].split(';')[0];
+            this.type = this.type || res.headers["content-type"].split(';')[0];
             this.data = res.data;
             this.size = Number(res.headers["content-length"]);
         }
@@ -94,7 +96,6 @@ class sub2vtt {
             if (headers["transfer-encoding"] && headers["transfer-encoding"] == 'chunked') {
                 console.log("the file is buffering")
             }
-            console.log()
             if (this.type == 'arraybuffer/json') console.log("the file is an array buffer")
             if (this.supported.arc.includes(this.type)) {
                 console.log("the requested file is an archive", this.type)
@@ -194,7 +195,7 @@ class sub2vtt {
         try {
             var zip = new AdmZip(file);
             var zipEntries = zip.getEntries();
-            console.log("zip file count: ", zipEntries.length)
+            console.log("zip file count:", zipEntries.length)
             let files = []
             for (var i = 0; i < zipEntries.length; i++) {
                 var filename = zipEntries[i].entryName;
@@ -265,12 +266,16 @@ class sub2vtt {
 
         this.client = axios.create(config);
     }
-    static gerenateUrl(url = String, proxy) {
+    static gerenateUrl(url = String, opts) {
+        let { proxy, type } = opts;
         let proxyString, data;
         data = new URLSearchParams();
         data.append("from", url)
-        if (proxy) proxyString = Buffer.from(JSON.stringify(proxy)).toString('base64');
-        if (proxy) data.append("proxy", proxyString)
+        if (proxy) {
+            proxyString = Buffer.from(JSON.stringify(proxy)).toString('base64');
+            data.append("proxy", proxyString)
+        }
+        if (type) data.append("type", type);
         return data.toString();
     }
     static ISO() {
