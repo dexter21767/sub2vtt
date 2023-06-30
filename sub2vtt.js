@@ -12,13 +12,14 @@ const iso639 = require('./ISO639');
 
 
 class sub2vtt {
-    constructor(url , proxy, episode) {
+    constructor(url, opts = {}) {
+        let { proxy, episode, type } = opts;
         this.url = url;
         this.proxy = proxy || {};
         this.data = null;
         this.size = null;
         this.error = null;
-        this.type = null;
+        this.type = type || null;
         this.client = null;
         this.episode = episode || null;
     }
@@ -29,18 +30,18 @@ class sub2vtt {
             url: this.url,
             responseType: 'arraybuffer'
         });
-        if(res?.data){
-        this.type = res.headers["content-type"].split(';')[0];
-        this.data = res.data;
-        this.size = Number(res.headers["content-length"]);
+        if (res?.data) {
+            this.type = res.headers["content-type"].split(';')[0];
+            this.data = res.data;
+            this.size = Number(res.headers["content-length"]);
         }
     }
 
-    GiveData(data){
+    GiveData(data) {
         this.data = data;
     }
-    DatafromHeaders(headers){
-        this.type = headers["content-type"].split(';')[0];
+    DatafromHeaders(headers) {
+        this.type = this.type || headers["content-type"].split(';')[0];
         this.size = Number(headers["content-length"]);
     }
 
@@ -49,15 +50,15 @@ class sub2vtt {
             // checking the link
 
             let file
-            console.log("this.type",this.type)
-            console.log("this.data",this.data)
+            console.log("this.type", this.type)
+            console.log("this.data", this.data)
 
-            if(!this.type) await this.CheckUrl()
-            
-            if(!this.type || !this.data ) await this.GetData();
-            if(!this.type || !this.data) throw "error getting sub"
-            
-            if(this.size?.length>10000000) throw "file too big"
+            if (!this.type) await this.CheckUrl()
+
+            if (!this.type || !this.data) await this.GetData();
+            if (!this.type || !this.data) throw "error getting sub"
+
+            if (this.size?.length > 10000000) throw "file too big"
             //get the file
             if (this.supported.arc.includes(this.type)) {
                 file = await this.extract()
@@ -81,7 +82,7 @@ class sub2vtt {
             let res = await this.request(
                 {
                     method: "head",
-                    url:this.url,
+                    url: this.url,
                 })
 
             if (!res || !res.status == "200" || !res.headers) throw "error getting headers"
@@ -93,23 +94,23 @@ class sub2vtt {
             if (headers["transfer-encoding"] && headers["transfer-encoding"] == 'chunked') {
                 console.log("the file is buffering")
             }
-
+            console.log()
             if (this.type == 'arraybuffer/json') console.log("the file is an array buffer")
             if (this.supported.arc.includes(this.type)) {
-                console.log("the requested file is an archive")
+                console.log("the requested file is an archive", this.type)
             } else if (this.supported.subs.includes(this.type)) {
-                console.log("the requested file is a subtitle")
-            } else console.log("unsupported file format")
+                console.log("the requested file is a subtitle", this.type)
+            } else console.log("unsupported file format", this.type)
 
         } catch (err) {
             console.error(err);
-            return { res: "error",reason:err };
+            return { res: "error", reason: err };
         }
     }
 
     async extract() {
         try {
-            
+
             if (!this.data) throw "error requesting file"
             let res = this.data;
             const rar = this.supported.arcs.rar
@@ -135,15 +136,15 @@ class sub2vtt {
 
             if (data) {
                 res = data
-            } 
-            else if(this.data) res = this.data
+            }
+            else if (this.data) res = this.data
             else {
                 res = await this.request({
                     method: 'get',
                     url: this.url,
                     responseType: 'arraybuffer'
                 });
-                if(res?.data) res = res.data
+                if (res?.data) res = res.data
                 if (!res) throw "error requesting file"
             }
             var data = iconv.encode(res, 'utf8').toString();
@@ -173,11 +174,11 @@ class sub2vtt {
 
 
     supported = {
-        arc: ["application/zip","application/x-zip-compressed", "application/x-rar", "application/x-rar-compressed", "application/vnd.rar"],
+        arc: ["application/zip", "application/x-zip-compressed", "application/x-rar", "application/x-rar-compressed", "application/vnd.rar"],
         subs: ["application/x-subrip", "text/vtt", "application/octet-stream"],
         arcs: {
             rar: ["application/x-rar", "application/x-rar-compressed", "application/vnd.rar"],
-            zip: ["application/zip","application/x-zip-compressed"]
+            zip: ["application/zip", "application/x-zip-compressed"]
 
         }
     }
@@ -186,22 +187,22 @@ class sub2vtt {
         return toFilter.match(/.dfxp|.scc|.srt|.ttml|.ssa|.vtt|.ass|.srt/gi)
     }
     checkEpisode(toFilter) {
-        var reEpisode = new RegExp(this.episode,"gi");
+        var reEpisode = new RegExp(this.episode, "gi");
         return toFilter.match(reEpisode)
     }
     async unzip(file) {
         try {
             var zip = new AdmZip(file);
             var zipEntries = zip.getEntries();
-            console.log("zip file count: ",zipEntries.length)
+            console.log("zip file count: ", zipEntries.length)
             let files = []
-            for (var i = 0; i < zipEntries.length; i++) { 
+            for (var i = 0; i < zipEntries.length; i++) {
                 var filename = zipEntries[i].entryName;
                 if (!this.checkExtension(filename)) continue;
                 if (this.episode) {
                     if (!this.checkEpisode(filename)) continue;
                 }
-                console.log("matched file : " , filename);
+                console.log("matched file : ", filename);
                 files.push(zipEntries[i].getData())
                 break; // because only takes the first match
             }
@@ -225,7 +226,7 @@ class sub2vtt {
                 if (this.episode) {
                     if (!this.checkEpisode(filename)) continue;
                 }
-                console.log("matched file : " , filename);
+                console.log("matched file : ", filename);
                 filesNames.push(filename)
                 break; // because only takes the first match
             }
@@ -241,7 +242,7 @@ class sub2vtt {
     }
 
     async request(options) {
-        if(!this.client) this.getClient()
+        if (!this.client) this.getClient()
         return await this.client(options)
             .catch(error => {
                 if (error.response) {
@@ -254,25 +255,25 @@ class sub2vtt {
             });
 
     }
-    getClient () {
+    getClient() {
         let config = {
             timeout: 15000,
-            headers : {}
+            headers: {}
         }
-        if(this.proxy) config.headers = this.proxy;
+        if (this.proxy) config.headers = this.proxy;
         config.headers["Accept-Encoding"] = "gzip,deflate,compress";
-         
+
         this.client = axios.create(config);
     }
-    static gerenateUrl(url=String, proxy){
-        let proxyString,data;
-        data= new URLSearchParams();
-        data.append("from",url)
-        if(proxy) proxyString = Buffer.from(JSON.stringify(proxy)).toString('base64');
-        if(proxy) data.append("proxy",proxyString)
+    static gerenateUrl(url = String, proxy) {
+        let proxyString, data;
+        data = new URLSearchParams();
+        data.append("from", url)
+        if (proxy) proxyString = Buffer.from(JSON.stringify(proxy)).toString('base64');
+        if (proxy) data.append("proxy", proxyString)
         return data.toString();
     }
-    static ISO(){
+    static ISO() {
         return iso639;
     }
 };
